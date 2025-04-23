@@ -9,7 +9,7 @@ router.get("/signup", (req, res) => {
 
 router.get("/login", (req, res) => {
     console.log("login route was hit");
-    res.send("login route called");
+    res.send("login route called example");
 });
 
 router.get("/logout", (req, res) => {
