@@ -1,9 +1,9 @@
 import { Coupon } from "../models/coupon.model.js";
 import { stripe } from "../lib/stripe.js";
-import { Order } from "../models/order.model.js";
+import Order from "../models/order.model.js";
 import dotenv from "dotenv";
 dotenv.config();
-export const createCheckoutSession = async (req, req) => {
+export const createCheckoutSession = async (res, req) => {
         try {
             const {products, couponCode} = req.body.products;
             if(!Array.isArray(products) || products.length === 0) {
