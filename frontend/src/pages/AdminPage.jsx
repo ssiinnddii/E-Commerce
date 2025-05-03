@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 
 import AnalyticsTab from "../components/AnalyticsTab";
 import CreateProductForm from "../components/CreateProductForm";
-import ProductsList from "../components/ProductsList";
+import ProductsList from "../components/ProductList";
 import { useProductStore } from "../stores/useProductStore";
 
 const tabs = [
