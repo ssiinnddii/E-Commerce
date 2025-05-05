@@ -115,18 +115,32 @@ export const getProductsByCategory = async (req, res) => {
 
 export const toggleFeaturedProduct = async (req, res) => {
     try {
-        const product = await Product.findById(productId);
-        if(product) {
-            product.isFeatured = !product.isFeatured;
-            const updatedProduct = await product.save();
-            await updateFeaturedProductsCache();
-            res.json(updatedProduct);
-        } else{
-            res.status(404).json({ message: "Product not found" });
+        const productId = req.params.id; // This was missing - getting productId from request params
+        
+        if (!productId) {
+            return res.status(400).json({ message: "Product ID is required" });
         }
         
-        await product.save();
-        res.json(product);
+        const product = await Product.findById(productId);
+        
+        if (!product) {
+            return res.status(404).json({ message: "Product not found" });
+        }
+        
+        // Toggle the featured status
+        product.isFeatured = !product.isFeatured;
+        
+        // Save the updated product
+        const updatedProduct = await product.save();
+        
+        // Update the Redis cache for featured products
+        await updateFeaturedProductsCache();
+        
+        res.json({
+            success: true,
+            isFeatured: product.isFeatured,
+            message: `Product ${product.isFeatured ? 'featured' : 'unfeatured'} successfully`
+        });
     } catch (error) {
         console.log("Error in toggling featured product", error.message);
         res.status(500).json({ message: "Server error", error: error.message });
