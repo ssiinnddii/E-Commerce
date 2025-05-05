@@ -7,6 +7,8 @@ import Navbar from "./components/Navbar";
 import AdminPage from "./pages/AdminPage";
 import CategoryPage from "./pages/CategoryPage";
 import CartPage from "./pages/CartPage";
+import PurchaseSuccessPage from "./pages/PurchaseSuccessPage";
+import PurchaseCancelPage from "./pages/PurchaseCancelPage";
 
 import { Toaster } from "react-hot-toast";
 import { useUserStore } from "./stores/useUserStore";
@@ -17,6 +19,7 @@ import LoadingSpinner from "./components/LoadingSpinner";
 function App() {
   const {user, checkAuth, checkingAuth }  = useUserStore();
   const {getCartItems} = useCartStore();
+  
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
@@ -26,7 +29,8 @@ function App() {
     if(user) getCartItems();
   }, [getCartItems, user]);
 
-  if(checkingAuth) return <LoadingSpinner />
+  if(checkingAuth) return <LoadingSpinner />;
+
   return (
     <div className="min-h-screen bg-gray-900 text-white relative overflow-hidden">
       {/* Background gradient */}
@@ -52,6 +56,14 @@ function App() {
 
           <Route path="/cart" 
           element={user ? <CartPage /> : 
+           <Navigate to={"/login"} />} />
+
+           <Route path="/purchase-success" 
+          element={user ? <PurchaseSuccessPage /> : 
+           <Navigate to={"/login"} />} />
+
+           <Route path="/purchase-cancel" 
+          element={user ? <PurchaseCancelPage /> : 
            <Navigate to={"/login"} />} />
 
         </Routes>

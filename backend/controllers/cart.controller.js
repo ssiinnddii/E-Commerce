@@ -8,7 +8,7 @@ export const getCartProducts = async (req, res) => {
         }
         
         // Debug info
-        console.log("User cart items:", req.user.cartItems);
+       // console.log("User cart items:", req.user.cartItems);
         
         // Filter out any invalid cart items
         const validCartItems = req.user.cartItems.filter(item => 
@@ -92,7 +92,8 @@ export const addToCart = async (req, res) => {
 
 export const removeAllFromCart = async (req, res) => {
     try {
-        const { productId } = req.body;
+        // Check if req.body exists before destructuring
+        const productId = req.body ? req.body.productId : undefined;
         const user = req.user;
         
         if (!user.cartItems) {
@@ -101,25 +102,16 @@ export const removeAllFromCart = async (req, res) => {
             return res.json([]);
         }
         
-        if (!productId) {
-            // Clear entire cart
-            user.cartItems = [];
-        } else {
-            // Filter out the specified product
-            const originalLength = user.cartItems.length;
-            user.cartItems = user.cartItems.filter(item => 
-                !(item && item.product && item.product.toString() === productId.toString())
-            );
-            
-            console.log(`Removed items: ${originalLength - user.cartItems.length}`);
-        }
-        
+        // Clear entire cart if no productId specified
+        user.cartItems = [];
         await user.save();
         
-        // Return updated cart items with product details
-        return getCartProducts(req, res);
+        console.log("Cart cleared successfully");
+        
+        // Return updated cart items (which should be empty)
+        return res.json([]);
     } catch (error) {
-        console.log("Error in removing from cart", error.message);
+        console.log("Error in removing from cart", error);
         res.status(500).json({ message: "Server error", error: error.message });
     }
 };
