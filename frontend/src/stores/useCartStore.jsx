@@ -3,42 +3,124 @@ import axios from "../lib/axios";
 import { toast } from "react-hot-toast";
 
 export const useCartStore = create((set, get) => ({
-    cart: [],
+	cart: [],
 	coupon: null,
 	total: 0,
 	subtotal: 0,
 	isCouponApplied: false,
 
-    getCartItems: async () => {
+	getMyCoupon: async () => {
+		try {
+			const response = await axios.get("/coupons");
+			set({ coupon: response.data });
+		} catch (error) {
+			console.error("Error fetching coupon:", error);
+		}
+	},
+	
+	applyCoupon: async (code) => {
+		try {
+			const response = await axios.post("/coupons/validate", { code });
+			set({ coupon: response.data, isCouponApplied: true });
+			get().calculateTotals();
+			toast.success("Coupon applied successfully");
+		} catch (error) {
+			toast.error(error.response?.data?.message || "Failed to apply coupon");
+		}
+	},
+	
+	removeCoupon: () => {
+		set({ coupon: null, isCouponApplied: false });
+		get().calculateTotals();
+		toast.success("Coupon removed");
+	},
+
+	getCartItems: async () => {
 		try {
 			const res = await axios.get("/cart");
+			console.log("Cart items received:", res.data);
 			set({ cart: res.data });
 			get().calculateTotals();
 		} catch (error) {
+			console.error("Error getting cart items:", error);
 			set({ cart: [] });
-			toast.error(error.response.data.message || "An error occurred");
+			toast.error(error.response?.data?.message || "An error occurred");
 		}
 	},
-    addToCart: async (product) => {
+	
+	clearCart: async () => {
 		try {
-			await axios.post("/cart", { productId: product._id });
+			await axios.delete("/cart"); // Call backend to clear cart
+			set({ cart: [], coupon: null, total: 0, subtotal: 0 });
+			toast.success("Cart cleared");
+		} catch (error) {
+			toast.error(error.response?.data?.message || "Failed to clear cart");
+		}
+	},
+	
+	addToCart: async (product) => {
+		try {
+			const response = await axios.post("/cart", { productId: product._id });
 			toast.success("Product added to cart");
-
-			set((prevState) => {
-				const existingItem = prevState.cart.find((item) => item._id === product._id);
-				const newCart = existingItem
-					? prevState.cart.map((item) =>
-							item._id === product._id ? { ...item, quantity: item.quantity + 1 } : item
-					  )
-					: [...prevState.cart, { ...product, quantity: 1 }];
-				return { cart: newCart };
-			});
+			
+			// Update the whole cart with the response from the server
+			set({ cart: response.data });
 			get().calculateTotals();
 		} catch (error) {
-			toast.error(error.response.data.message || "An error occurred");
+			console.error("Error adding to cart:", error);
+			toast.error(error.response?.data?.message || "An error occurred");
 		}
 	},
-    calculateTotals: () => {
+	
+	removeFromCart: async (productId) => {
+		try {
+			// Using the deleteAll endpoint with productId
+			const response = await axios.delete("/cart", { data: { productId } });
+			toast.success("Product removed from cart");
+			
+			// Update the whole cart with the response from the server
+			set({ cart: response.data });
+			get().calculateTotals();
+		} catch (error) {
+			console.error("Error removing from cart:", error);
+			toast.error(error.response?.data?.message || "Failed to remove product");
+		}
+	},
+	
+	updateQuantity: async (productId, quantity) => {
+		try {
+			console.log(`Updating product ${productId} to quantity ${quantity}`);
+			
+			if (quantity <= 0) {
+				// If quantity is 0 or negative, remove item from cart
+				return get().removeFromCart(productId);
+			}
+
+			// Make sure we're sending exactly what the backend expects
+			const response = await axios.put("/cart", { 
+				id: productId,  // The id field expected by backend
+				quantity: quantity  // The quantity value
+			});
+			
+			console.log("Update response:", response.data);
+			
+			// Update the whole cart with the response from the server
+			set({ cart: response.data });
+			get().calculateTotals();
+			toast.success("Quantity updated");
+		} catch (error) {
+			console.error("Error updating quantity:", error);
+			// Show more detailed error info
+			if (error.response) {
+				console.log("Error response data:", error.response.data);
+				toast.error(error.response.data.message || "Failed to update quantity");
+			} else {
+				toast.error("Failed to update quantity");
+			}
+		}
+	},
+	
+	calculateTotals: () => {
 		const { cart, coupon } = get();
 		const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 		let total = subtotal;
