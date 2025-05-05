@@ -50,10 +50,12 @@ export const useCartStore = create((set, get) => ({
 	
 	clearCart: async () => {
 		try {
+			// This endpoint is used to clear the entire cart after purchase
 			await axios.delete("/cart"); // Call backend to clear cart
-			set({ cart: [], coupon: null, total: 0, subtotal: 0 });
+			set({ cart: [], coupon: null, total: 0, subtotal: 0, isCouponApplied: false });
 			toast.success("Cart cleared");
 		} catch (error) {
+			console.error("Error clearing cart:", error);
 			toast.error(error.response?.data?.message || "Failed to clear cart");
 		}
 	},
@@ -74,8 +76,12 @@ export const useCartStore = create((set, get) => ({
 	
 	removeFromCart: async (productId) => {
 		try {
-			// Using the deleteAll endpoint with productId
-			const response = await axios.delete("/cart", { data: { productId } });
+			// First, update the quantity to 0 which should trigger removal
+			const response = await axios.put("/cart", { 
+				id: productId,
+				quantity: 0
+			});
+			
 			toast.success("Product removed from cart");
 			
 			// Update the whole cart with the response from the server

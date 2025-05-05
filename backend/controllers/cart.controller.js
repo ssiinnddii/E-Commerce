@@ -126,8 +126,9 @@ export const updateQuantity = async (req, res) => {
             return res.status(400).json({ message: "Product ID is required" });
         }
         
-        if (typeof quantity !== 'number' || quantity < 1) {
-            return res.status(400).json({ message: "Quantity must be a positive number" });
+        // Allow zero for removing products
+        if (typeof quantity !== 'number' || quantity < 0) {
+            return res.status(400).json({ message: "Quantity must be a non-negative number" });
         }
         
         const user = req.user;
@@ -144,8 +145,14 @@ export const updateQuantity = async (req, res) => {
         console.log("Existing item index:", existingItemIndex);
         
         if (existingItemIndex >= 0) {
-            // Update quantity
-            user.cartItems[existingItemIndex].quantity = quantity;
+            // Remove item if quantity is 0
+            if (quantity === 0) {
+                user.cartItems.splice(existingItemIndex, 1);
+            } else {
+                // Update quantity
+                user.cartItems[existingItemIndex].quantity = quantity;
+            }
+            
             await user.save();
             
             // Return updated cart items with product details
