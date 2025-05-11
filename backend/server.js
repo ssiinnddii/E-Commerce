@@ -33,10 +33,12 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/analytics", analyticsRoutes);
 
 if(process.env.NODE_ENV === "production") {
-    app.use(express.static(path.join(__dirname, "/frontend/dist")));
+    // Fix the path: Go up one directory from __dirname (which is backend) to reach root, then into frontend/dist
+    const rootDir = path.resolve(__dirname, "..");
+    app.use(express.static(path.join(rootDir, "frontend/dist")));
 
     app.get("*", (req, res) => {
-        res.sendFile(path.resolve(__dirname, "frontend", "dist", "index.html"));
+        res.sendFile(path.resolve(rootDir, "frontend", "dist", "index.html"));
     });
 }
 
